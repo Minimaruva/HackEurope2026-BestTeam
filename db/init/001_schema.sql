@@ -79,4 +79,7 @@ BEGIN
     BEFORE UPDATE ON contract
     FOR EACH ROW EXECUTE FUNCTION set_updated_at();
   END IF;
+
+  CREATE INDEX IF NOT EXISTS idx_contract_product_direction_market
+  ON contract(product_id, direction, market_source);
 END $$;
