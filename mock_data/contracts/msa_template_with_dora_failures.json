@@ -1,0 +1,22 @@
+{
+  "contract_id": "MSA-TEMPLATE-001",
+  "vendor": "Template SaaS Vendor",
+  "clauses": [
+    {
+      "id": "DORA-OPS-RESILIENCE",
+      "text": "Vendor will provide best-effort resilience with no guaranteed RTO/RPO.",
+      "compliance_status": "fail"
+    },
+    {
+      "id": "DORA-INCIDENT-REPORTING",
+      "text": "Incident notification timeline is undefined.",
+      "compliance_status": "fail"
+    },
+    {
+      "id": "DORA-AUDIT-RIGHTS",
+      "text": "Customer audit rights restricted to annual summaries only.",
+      "compliance_status": "fail"
+    }
+  ],
+  "notes": "Synthetic MSA with intentionally injected DORA compliance failures."
+}

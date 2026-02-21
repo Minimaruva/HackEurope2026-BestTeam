@@ -1,0 +1,17 @@
+{
+  "source": "susquehanna-mock",
+  "as_of_date": "2026-02-21",
+  "benchmarks": [
+    {
+      "category": "SaaS-Observability",
+      "median_annual_cost": 950,
+      "p75_annual_cost": 1200
+    },
+    {
+      "category": "SaaS-Security",
+      "median_annual_cost": 1400,
+      "p75_annual_cost": 1750
+    }
+  ],
+  "notes": "Mock JSON benchmark database for offline demo."
+}

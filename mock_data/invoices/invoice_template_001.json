@@ -1,0 +1,15 @@
+{
+  "invoice_id": "INV-TEMPLATE-001",
+  "vendor": "Template SaaS Vendor",
+  "currency": "USD",
+  "line_items": [
+    {
+      "sku": "TEMPLATE-SKU",
+      "description": "Placeholder service line",
+      "quantity": 1,
+      "unit_price": 1000
+    }
+  ],
+  "total_amount": 1000,
+  "notes": "Pre-extracted JSON dictionary template; no OCR required."
+}
