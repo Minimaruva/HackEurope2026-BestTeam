@@ -11,6 +11,11 @@ Paid.ai is a usage-based billing engine. It works by tracking "Signals" (events)
 - To connect Paid.ai to LangGraph: 
   - integrate their API inside your nodes. Whenever a node completes a valuable, billable action, you emit a Signal to Paid.ai.
 
+Each module for the modular business dashboard represents a specific business workflow optimisation like ERP:
+- Paid products for each such module that tracks usage of specific agent workflows
+
+
+
 
 ## Structure
 
