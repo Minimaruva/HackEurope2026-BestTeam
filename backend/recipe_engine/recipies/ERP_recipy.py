@@ -20,7 +20,7 @@ class SupplyChainState(TypedDict):
     contracts: List[dict]
     desired_volume: float
     target_location: str
-    recipe_type: Literal["cheapest", "fastest", "low_risk"]
+    recipe_type: Literal["cheapest", "fastest"]
     market_context: str
     risk_level: str
     optimized_results: List[dict]
