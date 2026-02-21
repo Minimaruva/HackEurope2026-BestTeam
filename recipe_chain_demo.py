@@ -5,6 +5,11 @@ import os
 from dotenv import load_dotenv
 from paid import Paid, Signal
 from langchain_community.tools import DuckDuckGoSearchRun
+from langchain_google_genai import ChatGoogleGenerativeAI
+
+# import { PaidClient } from '@paid-ai/paid-node';
+
+# const client = new PaidClient({ token: "e0c6ef5d-3ce7-499a-bacd-b70c12fb67ab" });
 
 # 1. Environment Setup
 load_dotenv()
@@ -35,9 +40,31 @@ def extract_data(state: SupplyChainState) -> SupplyChainState:
     return {"supplier_data": "Supplier A (Component X)"}
 
 def assess_risk(state: SupplyChainState) -> SupplyChainState:
-    print("-> Assessing risk based on market context...")
-    # Mocking risk assessment logic
-    risk = random.choice(["high", "low"]) 
+    print("-> Analyzing market context with Gemini...")
+    llm = ChatGoogleGenerativeAI(
+        model="models/gemini-2.5-flash", 
+        google_api_key=os.environ.get("GEMINI_API_KEY"),
+        temperature=0
+    )
+    
+    # Improved prompt to ensure the LLM uses the search data provided
+    prompt = (
+        f"Context: {state['market_context']}\n\n"
+        f"Supplier: {state['supplier_data']}\n"
+        "Task: Based on the context, is this supplier high risk or low risk? "
+        "Respond with exactly one word: 'high' or 'low'."
+    )
+    
+    try:
+        response = llm.invoke(prompt)
+        risk = response.content.strip().lower()
+        # Clean up any extra punctuation
+        risk = "".join(char for char in risk if char.isalnum())
+    except Exception as e:
+        print(f"!!! LLM Error: {e}")
+        risk = "low" # Safe fallback
+        
+    print(f"   [RESULT] Risk Level: {risk.upper()}")
     return {"risk_level": risk}
 
 def alternative_sourcing(state: SupplyChainState) -> SupplyChainState:
@@ -55,7 +82,7 @@ def generate_report(state: SupplyChainState) -> SupplyChainState:
     try:
         usage_signal = Signal(
             event_name="supply_chain_report_generated",
-            customer_id="test_customer_sandbox"
+            customer={"externalCustomerId": "test_customer_sandbox"}
         )
         paid_client.signals.create_signals(signals=[usage_signal])
     except Exception as e:
@@ -97,7 +124,24 @@ workflow.add_edge("generate_report", END)
 
 app = workflow.compile()
 
+# Paid test function to verify API key and SDK setup
+import traceback
+
+def test_paid_key(client: "Paid") -> None:
+    # Use the PAID key for the PAID test logs
+    token = os.environ.get("PAID_API_KEY") 
+    if not token:
+        print("ERROR: PAID_API_KEY not set.")
+        return
+
+    masked = token[:4] + "..." + token[-4:] if len(token) > 8 else "REDACTED"
+    print(f"PAID_API_KEY loaded (masked): {masked}")
+    # ... rest of the code
+
 if __name__ == "__main__":
+    # run the quick key test first
+    test_paid_key(paid_client)
+    
     result = app.invoke({
         "supplier_data": "", 
         "risk_level": "", 
