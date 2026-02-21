@@ -5,6 +5,7 @@ import uuid
 from dotenv import load_dotenv
 from langchain_community.tools import DuckDuckGoSearchRun 
 from langchain_google_genai import ChatGoogleGenerativeAI 
+from cost_estimator import ERPCostEstimator
 
 # 1. Import tracing instead of manual SDK clients
 from paid.tracing import paid_autoinstrument, initialize_tracing, paid_tracing, signal
@@ -56,6 +57,7 @@ def recipe_execution_node(state: SupplyChainState):
     recipe = state["recipe_type"]
     vol = state["desired_volume"]
     
+    estimator = ERPCostEstimator()
     processed = []
     for c in contracts:
         logistics_penalty = 0 if c['location'] == state['target_location'] else 500
