@@ -3,8 +3,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { ClipboardCheck, FileText, CreditCard, AlertTriangle, Download } from "lucide-react";
+import { ClipboardCheck, FileText, CreditCard, Download, ChevronLeft, ChevronRight, Lightbulb, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
+
+interface AgentFinding {
+  finding_id: string;
+  label: string;
+  value: string;
+  confidence: number;
+  source: string;
+}
 
 interface PendingTask {
   id: string;
@@ -21,6 +29,9 @@ interface PendingTask {
     rationale: string;
     estimated_value_saved: string;
     approved: boolean | null;
+    why: string;
+    data_signals: string[];
+    agent_findings: AgentFinding[];
   }[];
 }
 
@@ -41,6 +52,13 @@ const pendingTasks: PendingTask[] = [
         rationale: "Company standard policy dictates Net 60 for software vendors.",
         estimated_value_saved: "$500",
         approved: null,
+        why: "The agent analyzed 47 historical vendor contracts and found that 89% use Net 60 terms. Net 30 is an outlier that reduces cash flow flexibility by ~$12K/quarter based on average invoice volume.",
+        data_signals: ["47 contracts analyzed", "89% use Net 60", "$12K/quarter impact"],
+        agent_findings: [
+          { finding_id: "f1", label: "Net 60 (Recommended)", value: "Matches 89% of vendor contracts. Optimal cash flow.", confidence: 0.92, source: "Vendor Contract DB" },
+          { finding_id: "f2", label: "Net 45 (Alternative)", value: "Used by 8% of vendors. Moderate improvement.", confidence: 0.71, source: "Vendor Contract DB" },
+          { finding_id: "f3", label: "2/10 Net 60", value: "2% discount if paid in 10 days, else Net 60. Best if cash reserves allow.", confidence: 0.65, source: "Finance Policy Engine" },
+        ],
       },
       {
         change_id: "c2",
@@ -51,6 +69,12 @@ const pendingTasks: PendingTask[] = [
         rationale: "Full exclusion is too risky; a partial cap is industry standard.",
         estimated_value_saved: "$2,000",
         approved: null,
+        why: "Agent cross-referenced 3 prior incidents where unlimited liability exclusions led to unrecoverable losses totaling $84K. Industry benchmarks from Gartner suggest a 50% cap as the median position.",
+        data_signals: ["3 prior incidents", "$84K total losses", "Gartner benchmark"],
+        agent_findings: [
+          { finding_id: "f4", label: "50% Cap (Recommended)", value: "Median industry position per Gartner. Balanced risk.", confidence: 0.88, source: "Gartner Benchmark Report" },
+          { finding_id: "f5", label: "100% Cap", value: "Full liability match. Stronger protection but harder to negotiate.", confidence: 0.55, source: "Legal Precedent DB" },
+        ],
       },
     ],
   },
@@ -70,6 +94,13 @@ const pendingTasks: PendingTask[] = [
         rationale: "High churn risk (0.87). Customer has 14 months tenure. Retention discount is cheaper than acquisition cost.",
         estimated_value_saved: "$1,490",
         approved: null,
+        why: "Agent detected churn risk score of 0.87 (top 5% of at-risk users). Customer LTV is $2,086. Acquisition cost for replacement is ~$340. A 30% discount for 3 months costs $134 but preserves $1,490 in projected revenue.",
+        data_signals: ["0.87 churn score", "$2,086 LTV", "$340 CAC", "14mo tenure"],
+        agent_findings: [
+          { finding_id: "f6", label: "30% for 3mo (Recommended)", value: "Cost: $134. Expected retention probability: 74%.", confidence: 0.87, source: "Churn Prediction Model v3" },
+          { finding_id: "f7", label: "20% for 6mo", value: "Cost: $179. Expected retention probability: 68%.", confidence: 0.72, source: "Churn Prediction Model v3" },
+          { finding_id: "f8", label: "Free month + call", value: "Cost: $149 + CSM time. Expected retention probability: 81%.", confidence: 0.64, source: "CS Playbook Engine" },
+        ],
       },
     ],
   },
@@ -89,10 +120,79 @@ const pendingTasks: PendingTask[] = [
         rationale: "Agent negotiated 12% bulk discount based on order history.",
         estimated_value_saved: "$750",
         approved: null,
+        why: "Agent compared quotes from 5 suppliers and found Global Materials' price was 8% above market average. Leveraged 18-month order history (12 orders, $96K total) to negotiate a 12% bulk discount.",
+        data_signals: ["5 suppliers compared", "8% above market", "18mo history", "$96K spend"],
+        agent_findings: [
+          { finding_id: "f9", label: "$11.00/unit (Recommended)", value: "12% discount from Global Materials. Same delivery timeline.", confidence: 0.91, source: "Procurement Agent" },
+          { finding_id: "f10", label: "$10.75/unit (Alt supplier)", value: "SteelCo Inc. 14% cheaper but 2-week longer lead time.", confidence: 0.67, source: "Supplier Comparison DB" },
+        ],
       },
     ],
   },
 ];
+
+const FindingsCarousel = ({ findings }: { findings: AgentFinding[] }) => {
+  const [idx, setIdx] = useState(0);
+  if (findings.length === 0) return null;
+  const current = findings[idx];
+
+  return (
+    <div className="mt-3 rounded-lg border border-border bg-muted/30 p-3">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-1.5">
+          <BarChart3 className="h-3.5 w-3.5 text-primary" />
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Agent Findings ({idx + 1}/{findings.length})
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            disabled={idx === 0}
+            onClick={() => setIdx((i) => i - 1)}
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            disabled={idx === findings.length - 1}
+            onClick={() => setIdx((i) => i + 1)}
+          >
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </div>
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-semibold text-foreground">{current.label}</span>
+          <Badge variant="secondary" className="text-[10px]">
+            {Math.round(current.confidence * 100)}% confidence
+          </Badge>
+        </div>
+        <p className="text-sm text-muted-foreground">{current.value}</p>
+        <p className="text-[10px] text-muted-foreground/70">Source: {current.source}</p>
+      </div>
+      {/* Dot indicators */}
+      {findings.length > 1 && (
+        <div className="flex items-center justify-center gap-1 mt-2">
+          {findings.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setIdx(i)}
+              className={`h-1.5 rounded-full transition-all ${
+                i === idx ? "w-4 bg-primary" : "w-1.5 bg-border"
+              }`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const HITLInbox = () => {
   const [tasks, setTasks] = useState(pendingTasks);
@@ -215,6 +315,34 @@ const HITLInbox = () => {
                           {change.proposed_text}
                         </p>
                       </div>
+
+                      {/* Why Section */}
+                      <div className="rounded-lg border border-highlight-border bg-highlight-bg/30 p-3">
+                        <div className="flex items-start gap-2">
+                          <Lightbulb className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+                          <div>
+                            <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                              Why this change?
+                            </span>
+                            <p className="mt-1 text-sm text-foreground/80 leading-relaxed">
+                              {change.why}
+                            </p>
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                              {change.data_signals.map((signal, i) => (
+                                <Badge key={i} variant="outline" className="text-[10px] font-medium">
+                                  {signal}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Swipeable Findings */}
+                      {change.agent_findings.length > 1 && (
+                        <FindingsCarousel findings={change.agent_findings} />
+                      )}
+
                       <p className="text-sm text-foreground">
                         <span className="font-semibold">Rationale: </span>
                         {change.rationale}
