@@ -7,6 +7,9 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'contract_direction') THEN
     CREATE TYPE contract_direction AS ENUM ('IN', 'OUT');
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'contract_source') THEN
+    CREATE TYPE contract_source AS ENUM ('MARKET', 'OWNED');
+  END IF;
 END $$;
 
 -- COMPANY
@@ -24,6 +27,7 @@ CREATE TABLE IF NOT EXISTS product (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL UNIQUE,
   stripe_id TEXT UNIQUE,
+  type VARCHAR(50),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -31,6 +35,7 @@ CREATE TABLE IF NOT EXISTS product (
 -- CONTRACT
 CREATE TABLE IF NOT EXISTS contract (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  source contract_source NOT NULL DEFAULT 'MARKET',
   direction contract_direction NOT NULL,
   product_id UUID NOT NULL REFERENCES product(id) ON DELETE RESTRICT,
   company_id UUID NOT NULL REFERENCES company(id) ON DELETE RESTRICT,
@@ -47,6 +52,7 @@ CREATE TABLE IF NOT EXISTS contract (
 
 -- Indexes for common queries
 CREATE INDEX IF NOT EXISTS idx_contract_direction_product ON contract(direction, product_id);
+CREATE INDEX IF NOT EXISTS idx_contract_source_product_direction ON contract(source, product_id, direction);
 CREATE INDEX IF NOT EXISTS idx_contract_company ON contract(company_id);
 CREATE INDEX IF NOT EXISTS idx_contract_payment_due ON contract(payment_due_date);
 CREATE INDEX IF NOT EXISTS idx_contract_delivery_due ON contract(delivery_due_date);
@@ -83,3 +89,4 @@ BEGIN
   CREATE INDEX IF NOT EXISTS idx_contract_product_direction_market
   ON contract(product_id, direction, market_source);
 END $$;
+

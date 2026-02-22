@@ -33,3 +33,21 @@ Backward-compatible script name also works:
 ```bash
 python backend/markets/markets-api.py --product-id <PRODUCT_UUID> --direction OUT
 ```
+
+## 5) Generate current company contracts (OWNED)
+
+Creates random `OWNED` contracts with `2..7` rows per product for one company:
+
+```bash
+python backend/markets/owned_contracts_generator.py
+```
+
+Optional flags:
+
+```bash
+python backend/markets/owned_contracts_generator.py \
+  --owner-company-id <COMPANY_UUID> \
+  --min-per-product 2 \
+  --max-per-product 7 \
+  --seed 2026
+```
