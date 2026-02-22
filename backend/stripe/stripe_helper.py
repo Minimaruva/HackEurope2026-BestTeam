@@ -11,7 +11,7 @@ stripe.api_key = os.getenv("STRIPE_API_KEY")
 
 def retrieve_stripe_customer(software_customer_id: str) -> Optional[stripe.Customer]:
     try:
-        all_customers = stripe.Customer.list(limit=100)  # Adjust limit as needed
+        all_customers = stripe.Customer.list()
         for customer in all_customers.data:
             if customer.metadata.get("software_customer_id") == software_customer_id:
                 return customer
@@ -22,7 +22,7 @@ def retrieve_stripe_customer(software_customer_id: str) -> Optional[stripe.Custo
 
 def retrieve_stripe_product(software_product_id: str) -> Optional[stripe.Product]:
     try:
-        all_products = stripe.Product.list(limit=100)  # Adjust limit as needed
+        all_products = stripe.Product.list()
         for product in all_products.data:
             if product.metadata.get("software_product_id") == software_product_id:
                 return product
