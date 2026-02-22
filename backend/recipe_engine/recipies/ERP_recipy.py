@@ -1,4 +1,4 @@
-from typing import TypedDict, Literal, List
+from typing import TypedDict, Literal, List, Optional # Add Optional
 from langgraph.graph import StateGraph, END, START
 import os
 import uuid
@@ -22,6 +22,7 @@ class SupplyChainState(TypedDict):
     desired_volume: float
     target_location: str
     recipe_type: Literal["cheapest", "fastest"]
+    optional_flavour: Optional[str] 
     market_context: str
     risk_level: str
     optimized_results: List[dict]
@@ -38,8 +39,8 @@ def search_market_node(state: SupplyChainState):
     return {"market_context": results}
 
 def assess_risk_node(state: SupplyChainState):
-    print("-> [LLM] Analyzing market context with Gemini-2.5-Flash...")
-    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=os.environ.get("GEMINI_API_KEY"))
+    print("-> [LLM] Analyzing market context with Gemma-3-Flash...")
+    llm = ChatGoogleGenerativeAI(model="models/gemma-3-27b-it", google_api_key=os.environ.get("GEMINI_API_KEY"))
     prompt = f"Context: {state['market_context']}\nTask: Is risk for {state['target_location']} 'high' or 'low'? Respond with exactly one word."
     
     try:
@@ -52,8 +53,14 @@ def assess_risk_node(state: SupplyChainState):
         
     return {"risk_level": risk}
 
-def recipe_execution_node(state: SupplyChainState, optional_flavour: str = None):
+def recipe_execution_node(state: SupplyChainState): 
+    # Read it from state safely
+    flavour_key = state.get("optional_flavour")
+    
     print(f"-> [RECIPE] Applying '{state['recipe_type']}' heuristic...")
+    if flavour_key:
+        print(f"-> [FLAVOUR] Using optional flavour: {flavour_key}")
+
     contracts = state["contracts"]
     recipe = state["recipe_type"]
     vol = state["desired_volume"]
@@ -121,8 +128,8 @@ if __name__ == "__main__":
         "desired_volume": 100,
         "target_location": "Local",
         "recipe_type": "cheapest",
+        "optional_flavour": "low_risk", # <--- Pass it here
         "run_id": str(uuid.uuid4()),
-        # Must perfectly match the external ID of Customer-Sandbox
         "user_id": "customer-sandbox", 
         "stripe_customer_id": "cus_999"
     }
