@@ -61,6 +61,39 @@ const RecipeBuilder = () => {
     setSteps((prev) => prev.filter((s) => s.id !== id));
   };
 
+  const [agentResult, setAgentResult] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const runAgent = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("http://localhost:8000/api/run_agent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          product_id: "0c3358f0-b788-4ee1-aeff-45aee4bedf70", // Replace with selected product ID
+          user_id: "test-user-1",
+          toggles: {
+            eu_priority: true,
+            volume_discount: true
+          },
+          flavours: ["cheapest", "balanced"]
+        }),
+      });
+
+      if (!response.ok) throw new Error("Agent run failed");
+
+      const data = await response.json();
+      setAgentResult(data);
+      toast.success("Agent finished successfully!");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to run agent.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="p-6 lg:p-10 max-w-3xl mx-auto">
       <div className="mb-8">
@@ -204,6 +237,26 @@ const RecipeBuilder = () => {
           <Rocket className="mr-2 h-4 w-4" />
           Save & Deploy Recipe
         </Button>
+
+        <Button
+          size="lg"
+          className="w-full mt-4"
+          onClick={runAgent}
+          disabled={isLoading}
+        >
+          {isLoading ? "Agent Running..." : "Run Live Agent"}
+        </Button>
+
+        {agentResult && (
+          <Card className="mt-8">
+            <CardHeader><CardTitle>Agent Results</CardTitle></CardHeader>
+            <CardContent>
+              <pre className="bg-muted p-4 rounded text-xs overflow-auto max-h-96">
+                {JSON.stringify(agentResult.llm_explanations, null, 2)}
+              </pre>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

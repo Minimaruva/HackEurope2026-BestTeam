@@ -5,8 +5,6 @@ from typing import TypedDict, List
 from dotenv import load_dotenv
 from langgraph.graph import StateGraph, END, START
 from langchain_google_genai import ChatGoogleGenerativeAI
-from backend.factory.owned_contracts_api import fetch_owned_contracts_for_product
-from backend.markets.markets_api import fetch_market_contracts_for_product
 
 from prompts import FLAVOUR_PROMPTS
 from paid.tracing import paid_autoinstrument, initialize_tracing, paid_tracing, signal
@@ -244,59 +242,3 @@ if __name__ == "__main__":
         final_state = app.invoke(initial_state)
         print("\n=== AGENT EXECUTION SUMMARY ===")
         print(final_state['llm_explanations']['hitl_summary'])
-
-# Wrapper function to be called by API
-def run_erp_agent(product_id: str, user_id: str, toggles: dict, selected_flavours: list):
-    # 1. Fetch Real Data from DB
-    print(f"-> [DB] Fetching contracts for product {product_id}...")
-    
-    # Fetch owned contracts (acting as "Old/Baseline" contracts)
-    owned = fetch_owned_contracts_for_product(product_id)
-    # Convert dataclasses to dicts for LangGraph
-    old_contracts = [
-        {
-            "company_name": c.company_id, # You might want to join company name in SQL or fetch here
-            "quantity": float(c.quantity),
-            "unit_price": float(c.unit_price)
-        } 
-        for c in owned
-    ]
-
-    # Fetch market offers
-    market = fetch_market_contracts_for_product(product_id)
-    market_contracts = [
-        {
-            "company_name": c.market_source, # Or company_id
-            "unit_price": float(c.unit_price),
-            "quantity": float(c.quantity),
-            "market_source": c.market_source[-2:] if c.market_source else "US", # Crude country extraction
-            "credibility": 85, # Placeholder if not in DB, or fetch real credibility
-            "payment_days": 30, # Placeholder
-            "delivery_days": 14 # Placeholder
-        }
-        for c in market
-    ]
-
-    if not old_contracts or not market_contracts:
-        return {"error": "No data found for this product"}
-
-    # 2. Prepare State
-    initial_state = {
-        "old_contracts": old_contracts,
-        "market_contracts": market_contracts,
-        "active_toggles": toggles,
-        "selected_flavours": selected_flavours,
-        "run_id": str(uuid.uuid4()),
-        "user_id": user_id,
-        "processed_contracts": [], # Initialize
-        "target_volume": 0.0,      # Initialize
-        "agent_execution_cost": 0.0, # Initialize
-        "final_plans": {},         # Initialize
-        "llm_explanations": {}     # Initialize
-    }
-
-    # 3. Invoke Graph
-    with paid_tracing(external_customer_id=user_id, external_product_id="supply_chain_report"):
-        final_state = app.invoke(initial_state)
-    
-    return final_state
