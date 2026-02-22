@@ -10,7 +10,7 @@ export interface Company {
 export interface Product {
   id: string;
   name: string;
-  type: "raw" | "finished";
+  type: "raw" | "product";
   stripe_id?: string;
 }
 

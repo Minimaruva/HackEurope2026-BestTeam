@@ -27,17 +27,34 @@ const ProductCard = ({ product, onClick }: { product: Product; onClick: () => vo
 const ProductsPage = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    getProducts().then((data) => {
-      setProducts(data);
-      setLoading(false);
-    });
+    let mounted = true;
+
+    getProducts()
+      .then((data) => {
+        if (!mounted) return;
+        setProducts(data);
+        setError(null);
+      })
+      .catch((err: unknown) => {
+        if (!mounted) return;
+        setError(err instanceof Error ? err.message : "Failed to load products");
+      })
+      .finally(() => {
+        if (!mounted) return;
+        setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const raw = products.filter((p) => p.type === "raw");
-  const finished = products.filter((p) => p.type === "finished");
+  const product = products.filter((p) => p.type === "product");
 
   return (
     <div className="p-6 lg:p-10 max-w-5xl mx-auto">
@@ -50,6 +67,8 @@ const ProductsPage = () => {
 
       {loading ? (
         <p className="text-sm text-muted-foreground text-center py-20">Loading products…</p>
+      ) : error ? (
+        <p className="text-sm text-red-500 text-center py-20">{error}</p>
       ) : (
         <div className="space-y-10">
           {/* Raw Materials */}
@@ -78,7 +97,7 @@ const ProductsPage = () => {
               <span className="text-xs text-muted-foreground">— Sell contracts</span>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {finished.map((p) => (
+              {product.map((p) => (
                 <ProductCard key={p.id} product={p} onClick={() => navigate(`/products/${p.id}`)} />
               ))}
             </div>

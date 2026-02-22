@@ -7,6 +7,7 @@ import type {
   InvoiceResult,
 } from "@/types/contractops";
 import { mockProducts, mockRecipes, mockContracts, mockAgentResult, mockCostSummary, mockInvoiceResult } from "./mock-data";
+import { hasSupabaseConfig, supabaseRestGet } from "@/lib/supabase";
 
 const USE_MOCK = true;
 const API_BASE = import.meta.env.VITE_API_BASE || "";
@@ -26,8 +27,29 @@ function delay(ms = 600) {
 
 // --- Products ---
 export async function getProducts(): Promise<Product[]> {
+  if (hasSupabaseConfig) {
+    const data = await supabaseRestGet<Array<Record<string, unknown>>>(
+      "product?select=id,name,type,stripe_id&order=name.asc"
+    );
+
+    return data.map((row) => ({
+      id: row.id as string,
+      name: row.name as string,
+      type: normalizeProductType(row.type),
+      stripe_id: (row.stripe_id ?? undefined) as string | undefined,
+    }));
+  }
+
   if (USE_MOCK) { await delay(); return mockProducts; }
   return fetcher("/api/products");
+}
+
+function normalizeProductType(value: unknown): Product["type"] {
+  if (typeof value !== "string") return "raw";
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "finished" || normalized === "our") return "finished";
+  if (normalized === "raw" || normalized === "material" || normalized === "raw_material") return "raw";
+  return "raw";
 }
 
 // --- Contracts ---
