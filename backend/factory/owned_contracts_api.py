@@ -44,7 +44,6 @@ def get_owned_contracts_for_product(
             res.append(cur_contract)
             add_stripe_product_id_to_db(conn, product_id=cur_contract.product_id, stripe_product_id=stripe_product_id)
             add_stripe_customer_id_to_db(conn, company_id=cur_contract.company_id, stripe_customer_id=stripe_customer_id)
-            create_invoice_for_contract(cur_contract)
         return res
 
 def add_stripe_customer_id_to_db(conn: psycopg.Connection[Any], company_id: str, stripe_customer_id: str):

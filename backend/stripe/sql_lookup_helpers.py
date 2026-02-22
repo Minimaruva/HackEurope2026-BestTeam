@@ -51,6 +51,23 @@ def fetch_company_stripe_id(company_id: str) -> Optional[str]:
         return get_company_stripe_id(conn, company_id)
 
 
+def fetch_all_products() -> list[dict[str, Any]]:
+    """Return all products as a list of dicts (id, name, type, stripe_id)."""
+    sql = "SELECT id, name, type, stripe_id FROM product ORDER BY name ASC;"
+    with psycopg.connect(DATABASE_URL) as conn:
+        with conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
+            cur.execute(sql)
+            return [
+                {
+                    "id": str(r["id"]),
+                    "name": r["name"],
+                    "type": r.get("type"),
+                    "stripe_id": r.get("stripe_id"),
+                }
+                for r in cur.fetchall()
+            ]
+
+
 def get_name_for_product_id(product_id: str) -> str:
     """Return the product name given its UUID."""
     with psycopg.connect(DATABASE_URL) as conn:

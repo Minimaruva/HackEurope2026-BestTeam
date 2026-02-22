@@ -9,8 +9,8 @@ import type {
 import { mockProducts, mockRecipes, mockContracts, mockAgentResult, mockCostSummary, mockInvoiceResult } from "./mock-data";
 import { hasSupabaseConfig, supabaseRestGet } from "@/lib/supabase";
 
-const USE_MOCK = (import.meta.env.VITE_USE_MOCK ?? "false") === "true";
-const API_BASE = import.meta.env.VITE_API_BASE || "";
+const USE_MOCK = false;
+const API_BASE = "http://127.0.0.1:8000";
 
 async function fetcher<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${url}`, {
@@ -18,6 +18,7 @@ async function fetcher<T>(url: string, options?: RequestInit): Promise<T> {
     ...options,
   });
   if (!res.ok) throw new Error(`API error: ${res.status}`);
+  console.log("Response:", res);
   return res.json();
 }
 

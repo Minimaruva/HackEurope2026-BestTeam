@@ -17,8 +17,9 @@ if str(REPO_ROOT) not in sys.path:
 
 from backend.factory.owned_contracts_api import fetch_owned_contracts_for_product
 from backend.markets.markets_api import fetch_market_contracts_for_product, fetch_offers
+from backend.stripe.sql_lookup_helpers import fetch_all_products, get_name_for_product_id
 from backend.recipe_engine.recipies.ERP_recipy import app as erp_agent
-from backend.types import Contract
+from backend.contract_types import Contract
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL", "postgresql://hack:hackpass@localhost:5432/hackathon"
@@ -27,10 +28,6 @@ PORT = int(os.getenv("PORT", "8000"))
 
 app = Flask(__name__)
 CORS(app)
-
-
-def get_conn() -> psycopg.Connection[Any]:
-    return psycopg.connect(DATABASE_URL)
 
 
 def as_float(value: Any) -> float:
@@ -109,11 +106,10 @@ def _market_offer_payload(c: Contract, product_name: str) -> dict[str, Any]:
 
 
 def _product_name(product_id: str) -> str:
-    sql = "SELECT name FROM product WHERE id = %(id)s LIMIT 1;"
-    with get_conn() as conn, conn.cursor() as cur:
-        cur.execute(sql, {"id": product_id})
-        row = cur.fetchone()
-    return row[0] if row else product_id
+    try:
+        return get_name_for_product_id(product_id)
+    except ValueError:
+        return product_id
 
 
 @app.get("/health")
@@ -123,14 +119,11 @@ def health() -> Any:
 
 @app.get("/api/products")
 def api_products() -> Any:
-    sql = "SELECT id, name, type, stripe_id FROM product ORDER BY name ASC;"
-    with get_conn() as conn, conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
-        cur.execute(sql)
-        rows = cur.fetchall()
+    rows = fetch_all_products()
     return jsonify(
         [
             {
-                "id": str(r["id"]),
+                "id": r["id"],
                 "name": r["name"],
                 "type": normalize_product_type(r.get("type")),
                 "stripe_id": r.get("stripe_id"),
