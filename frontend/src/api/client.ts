@@ -9,7 +9,7 @@ import type {
 import { mockProducts, mockRecipes, mockContracts, mockAgentResult, mockCostSummary, mockInvoiceResult } from "./mock-data";
 import { hasSupabaseConfig, supabaseRestGet } from "@/lib/supabase";
 
-const USE_MOCK = true;
+const USE_MOCK = (import.meta.env.VITE_USE_MOCK ?? "false") === "true";
 const API_BASE = import.meta.env.VITE_API_BASE || "";
 
 async function fetcher<T>(url: string, options?: RequestInit): Promise<T> {
@@ -55,9 +55,17 @@ function normalizeProductType(value: unknown): Product["type"] {
 // --- Contracts ---
 let _contracts = [...mockContracts];
 
-export async function getContracts(): Promise<Contract[]> {
+export async function getContracts(params?: {
+  productId?: string;
+  direction?: "IN" | "OUT";
+  source?: "owned" | "market";
+}): Promise<Contract[]> {
   if (USE_MOCK) { await delay(); return _contracts; }
-  return fetcher("/api/contracts");
+  const qp = new URLSearchParams();
+  qp.set("source", params?.source ?? "owned");
+  if (params?.productId) qp.set("product_id", params.productId);
+  if (params?.direction) qp.set("direction", params.direction);
+  return fetcher(`/api/contracts?${qp.toString()}`);
 }
 
 // --- Recipes (strategies) ---
@@ -93,6 +101,7 @@ export const updateAgent = updateRecipe;
 // --- Run ---
 export async function runAgent(body: {
   contract_id: string;
+  product_id: string;
   recipe_ids: string[];
   market_source?: string;
 }): Promise<AgentResult> {

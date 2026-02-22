@@ -68,7 +68,7 @@ const HITLPage = ({ productId }: HITLPageProps) => {
   const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    getContracts().then((c) => {
+    getContracts({ productId, source: "owned" }).then((c) => {
       const filtered = productId ? c.filter((x) => x.product_id === productId) : c;
       const open = filtered.filter((x) => x.status !== "closed");
       setContracts(open);
@@ -79,7 +79,7 @@ const HITLPage = ({ productId }: HITLPageProps) => {
   const selectedContract = contracts.find((c) => c.id === contractId);
 
   const handleRun = async () => {
-    if (!contractId) {
+    if (!contractId || !selectedContract) {
       toast({ title: "Select a contract", variant: "destructive" });
       return;
     }
@@ -91,6 +91,7 @@ const HITLPage = ({ productId }: HITLPageProps) => {
     try {
       const res = await runAgent({
         contract_id: contractId,
+        product_id: selectedContract.product_id,
         recipe_ids: [],
         market_source: marketSource === "All Markets" ? undefined : marketSource,
       });

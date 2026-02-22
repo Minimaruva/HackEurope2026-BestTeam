@@ -29,8 +29,8 @@ const ContractsPage = ({ productId, direction }: ContractsPageProps) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getContracts().then((data) => {
-      let filtered = productId ? data.filter((c) => c.product_id === productId) : data;
+    getContracts({ productId, direction, source: "owned" }).then((data) => {
+      let filtered = data;
       if (direction) filtered = filtered.filter((c) => c.direction === direction);
       setContracts(filtered);
       setLoading(false);
